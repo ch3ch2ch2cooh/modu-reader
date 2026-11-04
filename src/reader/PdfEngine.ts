@@ -377,13 +377,11 @@ export class PdfEngine implements ReaderEngine {
   }
 
   nextPage(): void {
-    this.cb.onTurn?.(1);
-    void this.goTo({ type: 'pdf', page: this.currentPage + 1 });
+    void this.goTo({ type: 'pdf', page: this.currentPage + 1 }).then(() => this.cb.onTurn?.(1));
   }
 
   prevPage(): void {
-    this.cb.onTurn?.(-1);
-    void this.goTo({ type: 'pdf', page: this.currentPage - 1 });
+    void this.goTo({ type: 'pdf', page: this.currentPage - 1 }).then(() => this.cb.onTurn?.(-1));
   }
 
   clearSelection(): void {

@@ -372,7 +372,6 @@ export class ReflowEngine implements ReaderEngine {
   }
 
   private turnPage(direction: 1 | -1): void {
-    this.cb.onTurn?.(direction);
     const scroller = this.scroller;
     if (!scroller) return;
     const delta = (scroller.clientHeight - 40) * direction;
@@ -384,6 +383,7 @@ export class ReflowEngine implements ReaderEngine {
         requestAnimationFrame(() => {
           scroller.scrollTop = scroller.scrollHeight;
           this.emitLocation();
+          this.cb.onTurn?.(-1);
         });
       }
       return;
@@ -391,6 +391,7 @@ export class ReflowEngine implements ReaderEngine {
     if (next >= max - 4 && direction > 0) {
       if (this.chapterIndex < this.chapters.length - 1) {
         this.renderChapter(this.chapterIndex + 1);
+        requestAnimationFrame(() => this.cb.onTurn?.(1));
       }
       return;
     }

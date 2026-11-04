@@ -1212,32 +1212,34 @@ input[type='range']::-webkit-slider-thumb {
 
 @keyframes page-turn-next {
   from {
-    opacity: 0.35;
-    transform: translateX(14px);
+    opacity: 0.72;
+    transform: translate3d(18px, 0, 0);
   }
   to {
     opacity: 1;
-    transform: none;
+    transform: translate3d(0, 0, 0);
   }
 }
 
 @keyframes page-turn-prev {
   from {
-    opacity: 0.35;
-    transform: translateX(-14px);
+    opacity: 0.72;
+    transform: translate3d(-18px, 0, 0);
   }
   to {
     opacity: 1;
-    transform: none;
+    transform: translate3d(0, 0, 0);
   }
 }
 
 .reader-stage.page-turn-next {
-  animation: page-turn-next 0.2s ease-out;
+  animation: page-turn-next 0.24s cubic-bezier(0.22, 0.61, 0.36, 1);
+  will-change: transform, opacity;
 }
 
 .reader-stage.page-turn-prev {
-  animation: page-turn-prev 0.2s ease-out;
+  animation: page-turn-prev 0.24s cubic-bezier(0.22, 0.61, 0.36, 1);
+  will-change: transform, opacity;
 }
 
 @media (prefers-reduced-motion: reduce) {

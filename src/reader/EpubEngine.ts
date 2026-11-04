@@ -407,13 +407,19 @@ export class EpubEngine implements ReaderEngine {
   }
 
   nextPage(): void {
-    this.cb.onTurn?.(1);
-    void this.rendition?.next();
+    const rendition = this.rendition;
+    if (!rendition) return;
+    void rendition.next().then(() => {
+      if (!this.destroyed) this.cb.onTurn?.(1);
+    });
   }
 
   prevPage(): void {
-    this.cb.onTurn?.(-1);
-    void this.rendition?.prev();
+    const rendition = this.rendition;
+    if (!rendition) return;
+    void rendition.prev().then(() => {
+      if (!this.destroyed) this.cb.onTurn?.(-1);
+    });
   }
 
   seekPercent(percent: number): void {
