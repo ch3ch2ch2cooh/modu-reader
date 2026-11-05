@@ -1,3 +1,4 @@
+import { Capacitor } from '@capacitor/core';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -71,6 +72,11 @@ export default function ReaderPage() {
   const [error, setError] = useState('');
   const [location, setLocation] = useState<EngineLocation | null>(null);
   const [selection, setSelection] = useState<SelectionInfo | null>(null);
+  const selectionRef = useRef<SelectionInfo | null>(null);
+  const holdSelectionRef = useRef(false);
+  useEffect(() => {
+    selectionRef.current = selection;
+  }, [selection]);
   const [chromeVisible, setChromeVisible] = useState(true);
   const [sheet, setSheet] = useState<'toc' | 'marks' | null>(null);
   const [noteDraft, setNoteDraft] = useState<SelectionInfo | null>(null);
@@ -159,6 +165,11 @@ export default function ReaderPage() {
   }, []);
 
   const handleContentTap = useCallback(() => {
+    if (selectionRef.current) {
+      engineRef.current?.clearSelection();
+      setSelection(null);
+      return;
+    }
     toggleChrome();
   }, [toggleChrome]);
 
@@ -228,7 +239,18 @@ export default function ReaderPage() {
     const callbacks: EngineCallbacks = {
       onLocation,
       onSelection: (sel) => {
+        if (!sel && holdSelectionRef.current) {
+          holdSelectionRef.current = false;
+          return;
+        }
         setSelection(sel);
+        if (sel && Capacitor.isNativePlatform()) {
+          // Capture the selection into React state, then drop the WebView's
+          // native selection so its copy/share/select-all menu does not pile
+          // up on top of our own toolbar.
+          holdSelectionRef.current = true;
+          requestAnimationFrame(() => engineRef.current?.clearSelection());
+        }
       },
       onHighlightClick: (noteId) => {
         const note = notes.find((n) => n.id === noteId) ?? null;
