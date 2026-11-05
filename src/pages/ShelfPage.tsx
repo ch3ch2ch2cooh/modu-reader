@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import {
@@ -28,8 +28,10 @@ import {
   renameCategory,
   setBookCategories,
   toggleBookCategory,
+  updateBook,
 } from '../db/repo';
 import { importBookFile } from '../parsers';
+import { isBlankCover, makeGeneratedCover } from '../lib/cover';
 import { formatBytes, formatRelative, percentLabel } from '../lib/utils';
 import { htmlToPlainText } from '../lib/text';
 import { canPickFolder, pickBookFolder, readBookFileAsFile } from '../lib/folderImport';
@@ -73,6 +75,22 @@ export default function ShelfPage() {
   const books = useLiveQuery(() => listBooks(), [], []) ?? [];
   const categories = useLiveQuery(() => listCategories(), [], []) ?? [];
   const progressRows = useLiveQuery(() => listProgress(), [], []) ?? [];
+  const coverRepairRef = useRef(false);
+
+  // Older imports of scanned PDFs could store a blank first page as the cover.
+  useEffect(() => {
+    if (coverRepairRef.current || books.length === 0) return;
+    coverRepairRef.current = true;
+    void (async () => {
+      for (const book of books) {
+        if (book.format !== 'pdf' || !book.cover) continue;
+        if (await isBlankCover(book.cover)) {
+          const cover = makeGeneratedCover(book.title, book.author);
+          if (cover) await updateBook(book.id, { cover });
+        }
+      }
+    })();
+  }, [books]);
 
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
