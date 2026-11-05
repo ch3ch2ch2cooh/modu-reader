@@ -1,7 +1,7 @@
 import type { ChapterMeta } from '../types';
 import type { ParsedBook } from './types';
 import { closePdf, openPdf } from '../lib/pdf';
-import { makeGeneratedCover } from '../lib/cover';
+import { isBlankCover, makeGeneratedCover } from '../lib/cover';
 
 const MAX_TOC_ITEMS = 800;
 
@@ -69,7 +69,7 @@ export async function parsePdf(file: File): Promise<ParsedBook> {
     } catch {
       cover = undefined;
     }
-    if (!cover) cover = makeGeneratedCover(title, author);
+    if (!cover || (await isBlankCover(cover))) cover = makeGeneratedCover(title, author);
 
     return {
       title,
