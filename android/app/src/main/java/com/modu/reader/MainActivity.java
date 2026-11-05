@@ -1,5 +1,6 @@
 package com.modu.reader;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import com.getcapacitor.BridgeActivity;
@@ -10,7 +11,16 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(FolderImportPlugin.class);
         registerPlugin(VolumeKeysPlugin.class);
+        registerPlugin(OpenWithPlugin.class);
         super.onCreate(savedInstanceState);
+        OpenWithPlugin.setPendingIntent(this, getIntent());
+    }
+
+    @Override
+    public void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        OpenWithPlugin.setPendingIntent(this, intent);
     }
 
     @Override
