@@ -1457,6 +1457,34 @@ input[type='range']::-webkit-slider-thumb {
   gap: 8px;
 }
 
+.selection-toolbar--top {
+  top: calc(var(--safe-top) + 10px);
+  bottom: auto;
+}
+
+.selection-toolbar__actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(244, 239, 230, 0.14);
+}
+
+.selection-toolbar__actions button {
+  flex: 1;
+  padding: 6px 0;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(244, 239, 230, 0.1);
+  color: #f4efe6;
+  font: inherit;
+  font-size: 12px;
+}
+
+.selection-toolbar__actions button:active {
+  background: rgba(244, 239, 230, 0.2);
+}
+
 .color-dots {
   display: flex;
   gap: 6px;

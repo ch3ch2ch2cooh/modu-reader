@@ -437,6 +437,22 @@ export class EpubEngine implements ReaderEngine {
     }
   }
 
+  selectAll(): void {
+    try {
+      const contents = this.getContents();
+      const doc = contents?.document;
+      if (!contents || !doc) return;
+      const range = doc.createRange();
+      range.selectNodeContents(doc.body);
+      const selection = contents.window.getSelection();
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+      this.handleSelected('', contents);
+    } catch {
+      /* ignore */
+    }
+  }
+
   clearSelection(): void {
     try {
       const contents = this.getContents();

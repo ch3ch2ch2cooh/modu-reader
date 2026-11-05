@@ -55,6 +55,8 @@ export interface ReaderEngine {
   nextPage(): void;
   prevPage(): void;
   clearSelection(): void;
+  /** select all readable text in the current section/page */
+  selectAll?(): void;
   /** optional: jump to a 0..1 position (epub uses generated locations) */
   seekPercent?(percent: number): void;
 }

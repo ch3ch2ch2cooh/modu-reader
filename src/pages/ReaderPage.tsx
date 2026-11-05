@@ -229,10 +229,6 @@ export default function ReaderPage() {
       onLocation,
       onSelection: (sel) => {
         setSelection(sel);
-        if (sel) {
-          setChromeVisible(true);
-          if (chromeTimer.current) clearTimeout(chromeTimer.current);
-        }
       },
       onHighlightClick: (noteId) => {
         const note = notes.find((n) => n.id === noteId) ?? null;
@@ -508,6 +504,28 @@ export default function ReaderPage() {
     setAiAskError('');
   }
 
+  async function shareSelection(sel: SelectionInfo) {
+    try {
+      if (navigator.share) {
+        await navigator.share({ text: sel.text });
+        return;
+      }
+    } catch {
+      /* fall through to copy */
+    }
+    await navigator.clipboard?.writeText(sel.text);
+    flash('已复制，可粘贴分享');
+  }
+
+  function searchSelection(sel: SelectionInfo) {
+    const url = `https://www.bing.com/search?q=${encodeURIComponent(sel.text)}`;
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.rel = 'noreferrer';
+    link.click();
+  }
+
   async function toggleBookmark() {
     const loc = locationRef.current;
     if (!loc) return;
@@ -658,6 +676,17 @@ export default function ReaderPage() {
             setSelection(null);
           }}
           onAI={() => void runAI(selection)}
+          onShare={() => void shareSelection(selection)}
+          onSelectAll={() => {
+            engineRef.current?.selectAll?.();
+            flash('已全选当前页');
+          }}
+          onSearch={() => searchSelection(selection)}
+          placement={
+            selection.screenRect.top <= 1 || selection.screenRect.top > window.innerHeight * 0.5
+              ? 'top'
+              : 'bottom'
+          }
           onCopy={() => {
             void navigator.clipboard?.writeText(selection.text);
             flash('已复制');
@@ -885,6 +914,10 @@ function SelectionToolbar({
   onNote,
   onAI,
   onCopy,
+  onShare,
+  onSelectAll,
+  onSearch,
+  placement,
   onClose,
 }: {
   selection: SelectionInfo;
@@ -892,11 +925,19 @@ function SelectionToolbar({
   onNote: () => void;
   onAI: () => void;
   onCopy: () => void;
+  onShare: () => void;
+  onSelectAll: () => void;
+  onSearch: () => void;
+  placement: 'top' | 'bottom';
   onClose: () => void;
 }) {
-  const [showColors, setShowColors] = useState(true);
   return (
-    <div className="selection-toolbar" role="toolbar">
+    <div
+      className={`selection-toolbar ${
+        placement === 'top' ? 'selection-toolbar--top' : ''
+      }`}
+      role="toolbar"
+    >
       <div className="selection-toolbar__quote">“{selection.text.slice(0, 42)}{selection.text.length > 42 ? '…' : ''}”</div>
       <div className="selection-toolbar__row">
         <div className="color-dots">
@@ -916,14 +957,16 @@ function SelectionToolbar({
         <button className="tool-button tool-button--ai" onClick={onAI}>
           <Sparkles size={15} /> AI
         </button>
-        <button className="tool-button" onClick={onCopy}>
-          复制
-        </button>
         <button className="icon-button" onClick={onClose} aria-label="取消">
           <X size={17} />
         </button>
       </div>
-      {showColors ? null : null}
+      <div className="selection-toolbar__actions">
+        <button onClick={onCopy}>复制</button>
+        <button onClick={onShare}>分享</button>
+        <button onClick={onSelectAll}>全选</button>
+        <button onClick={onSearch}>网页搜索</button>
+      </div>
     </div>
   );
 }

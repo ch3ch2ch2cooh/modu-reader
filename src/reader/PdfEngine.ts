@@ -384,6 +384,16 @@ export class PdfEngine implements ReaderEngine {
     void this.goTo({ type: 'pdf', page: this.currentPage - 1 }).then(() => this.cb.onTurn?.(-1));
   }
 
+  selectAll(): void {
+    if (!this.scroller) return;
+    const range = document.createRange();
+    range.selectNodeContents(this.scroller);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    this.captureSelection();
+  }
+
   clearSelection(): void {
     window.getSelection()?.removeAllRanges();
   }

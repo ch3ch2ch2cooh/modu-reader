@@ -398,6 +398,16 @@ export class ReflowEngine implements ReaderEngine {
     scroller.scrollTo({ top: next, behavior: 'smooth' });
   }
 
+  selectAll(): void {
+    if (!this.body) return;
+    const range = document.createRange();
+    range.selectNodeContents(this.body);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    this.captureSelection();
+  }
+
   clearSelection(): void {
     window.getSelection()?.removeAllRanges();
   }
