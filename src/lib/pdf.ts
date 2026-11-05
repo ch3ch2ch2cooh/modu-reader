@@ -23,12 +23,14 @@ const base = import.meta.env.BASE_URL || './';
 export async function openPdf(data: ArrayBuffer | Uint8Array): Promise<PDFDocumentProxy> {
   configure();
   const bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
+  const assetBase = new URL(`${base}pdfjs/`, document.baseURI).href;
   return pdfjsLib.getDocument({
     // clone so the caller's buffer stays usable for a second open
     data: bytes.slice(),
-    cMapUrl: `${base}pdfjs/cmaps/`,
+    cMapUrl: `${assetBase}cmaps/`,
     cMapPacked: true,
-    standardFontDataUrl: `${base}pdfjs/standard_fonts/`,
+    standardFontDataUrl: `${assetBase}standard_fonts/`,
+    wasmUrl: `${assetBase}wasm/`,
   }).promise;
 }
 
