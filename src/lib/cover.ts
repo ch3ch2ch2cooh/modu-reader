@@ -130,3 +130,41 @@ export function makeGeneratedCover(title: string, author: string): string | unde
 export function coverPlaceholderHtml(title: string): string {
   return escapeHtml(title);
 }
+
+/** True for a blank/near-white cover image (e.g. a scanned PDF's empty first page). */
+export async function isBlankCover(dataUrl?: string): Promise<boolean> {
+  if (!dataUrl) return true;
+  if (typeof document === 'undefined') return false;
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = 64;
+        canvas.height = 96;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return resolve(false);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        let sum = 0;
+        let sumSq = 0;
+        let nonWhite = 0;
+        const pixels = data.length / 4;
+        for (let i = 0; i < data.length; i += 4) {
+          const lum = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+          sum += lum;
+          sumSq += lum * lum;
+          if (lum < 235) nonWhite += 1;
+        }
+        const mean = sum / pixels;
+        const variance = Math.max(0, sumSq / pixels - mean * mean);
+        const deviation = Math.sqrt(variance);
+        resolve(deviation < 7 || (nonWhite / pixels < 0.004 && mean > 245));
+      } catch {
+        resolve(false);
+      }
+    };
+    img.onerror = () => resolve(false);
+    img.src = dataUrl;
+  });
+}
