@@ -10,6 +10,8 @@ import SettingsPage from './pages/SettingsPage';
 import ReaderPage from './pages/ReaderPage';
 import { useSettings } from './store/settings';
 import { THEMES } from './lib/themes';
+import { takeOpenedFile } from './lib/openWith';
+import { importBookFile } from './parsers';
 
 function Shell() {
   const location = useLocation();
@@ -32,6 +34,35 @@ function Shell() {
     });
     return () => {
       void handle.then((h) => h.remove());
+    };
+  }, [navigate]);
+
+  // System "open with": import the incoming PDF/EPUB/TXT/MOBI and open it.
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    let cancelled = false;
+    let busy = false;
+    const consume = async () => {
+      if (busy || cancelled) return;
+      const file = await takeOpenedFile();
+      if (!file || cancelled) return;
+      busy = true;
+      try {
+        const { book } = await importBookFile(file);
+        if (!cancelled) navigate(`/read/${book.id}`);
+      } catch (error) {
+        console.error('无法打开外部文件', error);
+      } finally {
+        busy = false;
+      }
+    };
+    void consume();
+    const stateListener = CapacitorApp.addListener('appStateChange', ({ isActive }) => {
+      if (isActive) void consume();
+    });
+    return () => {
+      cancelled = true;
+      void stateListener.then((handle) => handle.remove());
     };
   }, [navigate]);
 
