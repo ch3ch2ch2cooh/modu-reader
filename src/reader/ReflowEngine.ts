@@ -8,6 +8,7 @@ import type {
   SelectionInfo,
 } from './engine';
 import { attachSwipe } from './swipe';
+import { clearPaintedSelection, paintSelection } from './paintedSelection';
 import { estimateCharsPerPage, pageFromPercent } from '../lib/pages';
 
 interface TextNodeInfo {
@@ -140,6 +141,7 @@ export class ReflowEngine implements ReaderEngine {
     const selection = window.getSelection();
     if (!selection || selection.isCollapsed || selection.rangeCount === 0) return;
     const range = selection.getRangeAt(0);
+    paintSelection(document, range);
     if (!scroller.contains(range.commonAncestorContainer)) return;
     const text = selection.toString().replace(/\s+/g, ' ').trim();
     if (!text) {
@@ -410,6 +412,7 @@ export class ReflowEngine implements ReaderEngine {
 
   clearSelection(): void {
     window.getSelection()?.removeAllRanges();
+    clearPaintedSelection(document);
   }
 
   destroy(): void {

@@ -10,6 +10,7 @@ import type {
   SelectionInfo,
 } from './engine';
 import { attachSwipe } from './swipe';
+import { clearPaintedSelection, paintSelection } from './paintedSelection';
 import { estimateCharsPerPage, pageFromPercent } from '../lib/pages';
 
 function baseHref(href: string | undefined): string {
@@ -256,6 +257,7 @@ export class EpubEngine implements ReaderEngine {
       return;
     }
     const range = selection.getRangeAt(0);
+    paintSelection(contents.document, range);
     const rect = range.getBoundingClientRect();
     const iframe = contents.window.frameElement as HTMLIFrameElement | null;
     const frameRect = iframe?.getBoundingClientRect();
@@ -457,6 +459,7 @@ export class EpubEngine implements ReaderEngine {
     try {
       const contents = this.getContents();
       contents?.window?.getSelection()?.removeAllRanges();
+      if (contents?.document) clearPaintedSelection(contents.document);
     } catch {
       /* ignore */
     }
