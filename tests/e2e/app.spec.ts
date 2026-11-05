@@ -251,6 +251,12 @@ test('AI 注释：选中文字→DeepSeek→保存为笔记', async ({ page }) =
   await page.locator('.selection-toolbar .tool-button', { hasText: 'AI' }).click();
   await expect(page.locator('.ai-answer')).toContainText('把静止的雾写活了', { timeout: 60_000 });
 
+  await page.locator('.ai-chat__form input').fill('这里的“煮”字好在哪里？');
+  await page.locator('.ai-chat__form button').click();
+  await expect(page.locator('.ai-chat__item')).toContainText('这里的“煮”字好在哪里？', {
+    timeout: 30_000,
+  });
+
   await page.locator('.sheet-head .icon-button').click();
   await goBack(page);
   await page.locator('.tab-bar a', { hasText: '笔记' }).click();

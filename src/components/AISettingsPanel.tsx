@@ -73,6 +73,26 @@ export function AISettingsPanel() {
         </label>
       </div>
 
+      <div className="section-label">模型强度</div>
+      <div className="segmented">
+        {[
+          { id: 'low', label: 'Low' },
+          { id: 'medium', label: 'Medium' },
+          { id: 'high', label: 'High' },
+        ].map((item) => (
+          <button
+            key={item.id}
+            className={ai.effort === item.id ? 'is-active' : ''}
+            onClick={() => setAI({ effort: item.id as typeof ai.effort })}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+      <p className="hint-text">
+        控制 AI 注释和追问的回答长度与思考深度。Low 更快、答案更短，默认使用 Low；需要更详细的解释时再切到 Medium / High。
+      </p>
+
       <div className="section-label">导入时自动分类</div>
       <div className="setting-toggle">
         <div>

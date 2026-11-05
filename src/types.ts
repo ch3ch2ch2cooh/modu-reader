@@ -80,11 +80,21 @@ export interface Bookmark {
 
 export type HighlightColor = 'yellow' | 'green' | 'blue' | 'pink';
 
+export type AIEffort = 'low' | 'medium' | 'high';
+
+export interface AnnotationQA {
+  question: string;
+  answer: string;
+  createdAt: number;
+}
+
 export interface AIAnnotation {
   answer: string;
   model: string;
   sources: { title: string; url: string; snippet?: string }[];
   createdAt: number;
+  /** follow-up questions asked inside the annotation panel */
+  qa?: AnnotationQA[];
 }
 
 export interface Note {
@@ -133,6 +143,8 @@ export interface AISettings {
   apiKey: string;
   baseUrl: string;
   model: string;
+  /** answer depth for annotation + follow-up Q&A */
+  effort: AIEffort;
   searchProvider: 'none' | 'tavily' | 'bing';
   searchKey: string;
   contextChars: number;

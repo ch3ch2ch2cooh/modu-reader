@@ -15,6 +15,8 @@ import {
   X,
 } from 'lucide-react';
 import type {
+  AIAnnotation,
+  AnnotationQA,
   BookRecord,
   Bookmark,
   HighlightColor,
@@ -44,7 +46,7 @@ import { EpubEngine } from '../reader/EpubEngine';
 import { PdfEngine } from '../reader/PdfEngine';
 import { ReflowEngine } from '../reader/ReflowEngine';
 import type { EngineCallbacks, EngineLocation, ReaderEngine, SelectionInfo } from '../reader/engine';
-import { annotatePassage } from '../ai/annotate';
+import { annotatePassage, askAnnotation } from '../ai/annotate';
 import { hasVolumeKeySupport, setVolumeKeysEnabled } from '../lib/volumeKeys';
 
 declare global {
@@ -80,6 +82,17 @@ export default function ReaderPage() {
     noteId?: string;
     error?: string;
   }>({ status: 'idle', text: '', sources: [] });
+  const [aiSource, setAiSource] = useState<{
+    selected: string;
+    before: string;
+    after: string;
+    chapterTitle: string;
+    annotation: AIAnnotation;
+  } | null>(null);
+  const [aiChat, setAiChat] = useState<AnnotationQA[]>([]);
+  const [aiQuestion, setAiQuestion] = useState('');
+  const [aiAsking, setAiAsking] = useState(false);
+  const [aiAskError, setAiAskError] = useState('');
   const [toast, setToast] = useState('');
   const [sliderValue, setSliderValue] = useState(0);
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
@@ -427,6 +440,16 @@ export default function ReaderPage() {
         ai: annotation,
       });
       engineRef.current?.addNote(note);
+      setAiSource({
+        selected: sel.text,
+        before: context.before,
+        after: context.after,
+        chapterTitle: context.chapterTitle || sel.chapterTitle,
+        annotation,
+      });
+      setAiChat([]);
+      setAiQuestion('');
+      setAiAskError('');
       setAiState({
         status: 'done',
         text: annotation.answer,
@@ -441,6 +464,48 @@ export default function ReaderPage() {
         error: (err as Error).message,
       });
     }
+  }
+
+  async function askFollowUp() {
+    const question = aiQuestion.trim();
+    if (!question || !aiSource || !book || aiAsking) return;
+    setAiAsking(true);
+    setAiAskError('');
+    try {
+      const answer = await askAnnotation(
+        {
+          bookTitle: book.title,
+          author: book.author,
+          chapterTitle: aiSource.chapterTitle,
+          selected: aiSource.selected,
+          before: aiSource.before,
+          after: aiSource.after,
+          annotation: aiSource.annotation.answer,
+          history: aiChat.map((item) => ({ question: item.question, answer: item.answer })),
+          question,
+        },
+        ai,
+      );
+      const qa: AnnotationQA = { question, answer, createdAt: Date.now() };
+      const next = [...aiChat, qa];
+      const annotation = { ...aiSource.annotation, qa: next };
+      setAiChat(next);
+      setAiSource({ ...aiSource, annotation });
+      setAiQuestion('');
+      if (aiState.noteId) await updateNote(aiState.noteId, { ai: annotation });
+    } catch (err) {
+      setAiAskError((err as Error).message);
+    } finally {
+      setAiAsking(false);
+    }
+  }
+
+  function closeAI() {
+    setAiState({ status: 'idle', text: '', sources: [] });
+    setAiSource(null);
+    setAiChat([]);
+    setAiQuestion('');
+    setAiAskError('');
   }
 
   async function toggleBookmark() {
@@ -743,7 +808,7 @@ export default function ReaderPage() {
 
       <Sheet
         open={aiState.status !== 'idle'}
-        onClose={() => setAiState({ status: 'idle', text: '', sources: [] })}
+        onClose={closeAI}
         title="AI 注释"
         tall
       >
@@ -775,7 +840,37 @@ export default function ReaderPage() {
                   ))}
                 </div>
               ) : null}
-              <p className="hint-text">注释已自动保存到笔记，可长按高亮继续编辑。</p>
+              <p className="hint-text">注释已自动保存到笔记，可在下面继续追问这段文字。</p>
+              <div className="ai-chat">
+                {aiChat.map((item, index) => (
+                  <div className="ai-chat__item" key={`${item.createdAt}-${index}`}>
+                    <p className="ai-chat__question">问：{item.question}</p>
+                    <p className="ai-chat__answer">答：{item.answer}</p>
+                  </div>
+                ))}
+                <form
+                  className="ai-chat__form"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    void askFollowUp();
+                  }}
+                >
+                  <input
+                    value={aiQuestion}
+                    placeholder="继续追问这段文字，例如：这里的隐喻是什么？"
+                    onChange={(event) => setAiQuestion(event.target.value)}
+                    disabled={aiAsking}
+                  />
+                  <button
+                    type="submit"
+                    className="primary-button"
+                    disabled={!aiQuestion.trim() || aiAsking}
+                  >
+                    {aiAsking ? '思考中' : '提问'}
+                  </button>
+                </form>
+                {aiAskError ? <p className="ai-chat__error">{aiAskError}</p> : null}
+              </div>
             </>
           ) : null}
         </div>
@@ -903,6 +998,16 @@ function ActiveNotePanel({
                 <a key={source.url} href={source.url} target="_blank" rel="noreferrer">
                   {source.title || source.url}
                 </a>
+              ))}
+            </div>
+          ) : null}
+          {note.ai.qa && note.ai.qa.length > 0 ? (
+            <div className="ai-chat ai-chat--readonly">
+              {note.ai.qa.map((item, index) => (
+                <div className="ai-chat__item" key={`${item.createdAt}-${index}`}>
+                  <p className="ai-chat__question">问：{item.question}</p>
+                  <p className="ai-chat__answer">答：{item.answer}</p>
+                </div>
               ))}
             </div>
           ) : null}

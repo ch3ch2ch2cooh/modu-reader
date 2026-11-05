@@ -22,4 +22,4 @@ android/.idea
 *.iml
 coverage
 fixtures/pride.azw3
-fixtures/pride.mobi
+fixtures/pride.mobidist-video/

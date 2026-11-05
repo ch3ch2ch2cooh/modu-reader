@@ -1668,6 +1668,62 @@ input[type='range']::-webkit-slider-thumb {
   color: #3a352d;
 }
 
+.ai-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.ai-chat--readonly {
+  margin-top: 10px;
+}
+
+.ai-chat__item {
+  background: #f4efe6;
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.ai-chat__question {
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #7a5b3a;
+}
+
+.ai-chat__answer {
+  font-size: 13.5px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  color: #3a352d;
+}
+
+.ai-chat__form {
+  display: flex;
+  gap: 8px;
+}
+
+.ai-chat__form input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid #d8c9b4;
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+}
+
+.ai-chat__form .primary-button {
+  padding: 0 16px;
+  white-space: nowrap;
+}
+
+.ai-chat__error {
+  color: #a53a2a;
+  font-size: 12px;
+}
+
 .ai-sources {
   display: flex;
   flex-direction: column;

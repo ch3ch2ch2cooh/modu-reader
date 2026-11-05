@@ -18,6 +18,7 @@ export const DEFAULT_AI: AISettings = {
   apiKey: '',
   baseUrl: 'https://api.deepseek.com',
   model: 'deepseek-chat',
+  effort: 'low',
   // Bing is the default search backend; the key still has to be provided.
   searchProvider: 'bing',
   searchKey: '',
@@ -50,7 +51,7 @@ export const useSettings = create<SettingsState>()(
     }),
     {
       name: 'modu-settings',
-      version: 3,
+      version: 4,
       migrate: (persisted, version) => {
         const state = (persisted ?? {}) as PersistedSettings;
         const ai = { ...DEFAULT_AI, ...(state.ai ?? {}) };
@@ -59,6 +60,10 @@ export const useSettings = create<SettingsState>()(
           // v2 introduces Bing as the default search backend and auto-classify.
           if (state.ai?.searchProvider === 'none') ai.searchProvider = 'bing';
           ai.autoClassify = state.ai?.autoClassify ?? true;
+        }
+        if (version < 4) {
+          // v4 adds the answer-depth control; annotation/Q&A default to low.
+          ai.effort = 'low';
         }
         return { prefs, ai } as SettingsState;
       },
