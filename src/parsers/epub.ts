@@ -2,7 +2,7 @@ import ePub from 'epubjs';
 import type { Book } from 'epubjs';
 import type { ChapterMeta } from '../types';
 import type { ParsedBook } from './types';
-import { imageUrlToCover, makeGeneratedCover } from '../lib/cover';
+import { imageUrlToCover, isBlankCover, makeGeneratedCover } from '../lib/cover';
 
 function stripHash(href: string): string {
   const i = href.indexOf('#');
@@ -65,6 +65,7 @@ export async function parseEpub(file: File): Promise<ParsedBook> {
     } catch {
       cover = undefined;
     }
+    if (cover && (await isBlankCover(cover))) cover = undefined;
     if (!cover) {
       cover = makeGeneratedCover(metadata.title || file.name, metadata.creator || '');
     }
