@@ -1,7 +1,7 @@
 import type { ChapterMeta, ReflowChapter } from '../types';
 import type { ParsedBook } from './types';
 import type { BookFormat } from '../types';
-import { imageUrlToCover, makeGeneratedCover } from '../lib/cover';
+import { imageUrlToCover, isBlankCover, makeGeneratedCover } from '../lib/cover';
 
 interface TocItem {
   label: string;
@@ -181,6 +181,7 @@ export async function parseMobi(file: File, format: BookFormat): Promise<ParsedB
     } catch {
       cover = undefined;
     }
+    if (cover && (await isBlankCover(cover))) cover = undefined;
     if (!cover) cover = makeGeneratedCover(title, author);
 
     return {
