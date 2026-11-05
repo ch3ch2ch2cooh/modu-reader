@@ -1,52 +1,35 @@
-import * as pdfjsLib from 'pdfjs-dist';
-import type { PDFDocumentProxy } from 'pdfjs-dist';
-import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
-import { installMapHelpers } from './mapHelpers';
+import { Capacitor, registerPlugin } from '@capacitor/core';
 
-installMapHelpers();
-
-let configured = false;
-
-function configure() {
-  if (configured) return;
-  pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
-  configured = true;
+interface PendingOpen {
+  name: string;
+  mime?: string;
+  data: string;
 }
 
-export function getPdfjs() {
-  configure();
-  return pdfjsLib;
+interface OpenWithPlugin {
+  getPending(): Promise<PendingOpen | undefined>;
 }
 
-const base = import.meta.env.BASE_URL || './';
+const OpenWith = registerPlugin<OpenWithPlugin>('OpenWith');
 
-export async function openPdf(data: ArrayBuffer | Uint8Array): Promise<PDFDocumentProxy> {
-  configure();
-  const bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
-  return pdfjsLib.getDocument({
-    // clone so the caller's buffer stays usable for a second open
-    data: bytes.slice(),
-    cMapUrl: `${base}pdfjs/cmaps/`,
-    cMapPacked: true,
-    standardFontDataUrl: `${base}pdfjs/standard_fonts/`,
-  }).promise;
+function base64ToBytes(base64: string): ArrayBuffer {
+  const binary = atob(base64);
+  const buffer = new ArrayBuffer(binary.length);
+  const bytes = new Uint8Array(buffer);
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  return buffer;
 }
 
-/** pdf.js v6 exposes teardown on the loading task, not always on the proxy. */
-export async function closePdf(doc: PDFDocumentProxy | undefined): Promise<void> {
-  if (!doc) return;
-  const anyDoc = doc as unknown as {
-    destroy?: () => Promise<void>;
-    cleanup?: () => Promise<void>;
-    loadingTask?: { destroy?: () => Promise<void> };
-  };
+export async function takeOpenedFile(): Promise<File | null> {
+  if (!Capacitor.isNativePlatform()) return null;
   try {
-    if (typeof anyDoc.destroy === 'function') await anyDoc.destroy();
-    else if (typeof anyDoc.loadingTask?.destroy === 'function') await anyDoc.loadingTask.destroy();
-    else if (typeof anyDoc.cleanup === 'function') await anyDoc.cleanup();
+    const pending = await OpenWith.getPending();
+    if (!pending?.data) return null;
+    const bytes = base64ToBytes(pending.data);
+    return new File([bytes], pending.name || '打开的书', {
+      type: pending.mime || 'application/octet-stream',
+    });
   } catch {
-    /* ignore */
+    return null;
   }
 }
-
-export type { PDFDocumentProxy };
