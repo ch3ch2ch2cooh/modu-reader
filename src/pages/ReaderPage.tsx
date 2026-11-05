@@ -73,7 +73,7 @@ export default function ReaderPage() {
   const [location, setLocation] = useState<EngineLocation | null>(null);
   const [selection, setSelection] = useState<SelectionInfo | null>(null);
   const selectionRef = useRef<SelectionInfo | null>(null);
-  const holdSelectionRef = useRef(false);
+  const lastSelectionRef = useRef<{ sel: SelectionInfo; at: number } | null>(null);
   useEffect(() => {
     selectionRef.current = selection;
   }, [selection]);
@@ -239,18 +239,8 @@ export default function ReaderPage() {
     const callbacks: EngineCallbacks = {
       onLocation,
       onSelection: (sel) => {
-        if (!sel && holdSelectionRef.current) {
-          holdSelectionRef.current = false;
-          return;
-        }
+        if (sel) lastSelectionRef.current = { sel, at: Date.now() };
         setSelection(sel);
-        if (sel && Capacitor.isNativePlatform()) {
-          // Capture the selection into React state, then drop the WebView's
-          // native selection so its copy/share/select-all menu does not pile
-          // up on top of our own toolbar.
-          holdSelectionRef.current = true;
-          requestAnimationFrame(() => engineRef.current?.clearSelection());
-        }
       },
       onHighlightClick: (noteId) => {
         const note = notes.find((n) => n.id === noteId) ?? null;
@@ -709,6 +699,7 @@ export default function ReaderPage() {
               ? 'top'
               : 'bottom'
           }
+          showActions={!Capacitor.isNativePlatform()}
           onCopy={() => {
             void navigator.clipboard?.writeText(selection.text);
             flash('已复制');
@@ -940,6 +931,7 @@ function SelectionToolbar({
   onSelectAll,
   onSearch,
   placement,
+  showActions,
   onClose,
 }: {
   selection: SelectionInfo;
@@ -951,6 +943,7 @@ function SelectionToolbar({
   onSelectAll: () => void;
   onSearch: () => void;
   placement: 'top' | 'bottom';
+  showActions: boolean;
   onClose: () => void;
 }) {
   return (
@@ -983,12 +976,14 @@ function SelectionToolbar({
           <X size={17} />
         </button>
       </div>
-      <div className="selection-toolbar__actions">
-        <button onClick={onCopy}>复制</button>
-        <button onClick={onShare}>分享</button>
-        <button onClick={onSelectAll}>全选</button>
-        <button onClick={onSearch}>网页搜索</button>
-      </div>
+      {showActions ? (
+        <div className="selection-toolbar__actions">
+          <button onClick={onCopy}>复制</button>
+          <button onClick={onShare}>分享</button>
+          <button onClick={onSelectAll}>全选</button>
+          <button onClick={onSearch}>网页搜索</button>
+        </div>
+      ) : null}
     </div>
   );
 }
